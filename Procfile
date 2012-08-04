@@ -1,1 +1,1 @@
-console: ruby skypipe-server.rb
+server: ruby skypipe-server.rb
