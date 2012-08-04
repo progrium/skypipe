@@ -4,9 +4,11 @@ GEM
     ffi (1.1.3)
     ffi-rzmq (0.9.3)
       ffi
+    zmq (2.1.4)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
   ffi-rzmq
+  zmq
