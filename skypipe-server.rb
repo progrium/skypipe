@@ -10,7 +10,7 @@ SP_EOF = ""
 context = ZMQ::Context.new
 
 router = context.socket(ZMQ::ROUTER)
-router.bind('tcp://0.0.0.0:9000')
+router.bind("tcp://0.0.0.0:#{ENV['PORT'] || 9000}")
 
 poller = ZMQ::Poller.new
 poller.register(router, ZMQ::POLLIN)
