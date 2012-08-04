@@ -8,9 +8,10 @@ SP_UNLISTEN = "UNLISTEN"
 SP_EOF = ""
 
 context = ZMQ::Context.new
+port = ENV["PORT"] || 9000
 
 router = context.socket(ZMQ::ROUTER)
-router.bind("tcp://0.0.0.0:#{ENV['PORT'] || 9000}")
+router.bind("tcp://0.0.0.0:#{port}")
 
 poller = ZMQ::Poller.new
 poller.register(router, ZMQ::POLLIN)
@@ -18,7 +19,8 @@ poller.register(router, ZMQ::POLLIN)
 pipe_clients = {}
 pipe_buffers = {}
 
-puts "Serving..."
+STDOUT.write "Serving on #{port}...\n"
+STDOUT.flush
 loop do
   poller.poll(:blocking)
   poller.readables.each do |socket|
