@@ -69,10 +69,10 @@ def check_satellite(cli, context):
             return endpoint
         else:
             #cli.die("no reply")
-            return deploy_satellite(cli)
+            return deploy_satellite(cli, context)
     except (RESTAPIError, KeyError):
         #cli.die("key error")
-        return deploy_satellite(cli)
+        return deploy_satellite(cli, context)
 
 def deploy_satellite(cli, context):
     cli.info(' '.join(["Launching skypipe satellite.", 
