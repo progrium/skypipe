@@ -12,7 +12,9 @@ setup(
     description='Magic pipe in the sky',
     packages=find_packages(),
     install_requires=['pyzmq-static', 'argparse', 'requests', 'colorama'],
-    data_files=[],
+    zip_safe=False,
+    package_data={
+        'skypipe': ['satellite/*']},
     entry_points={
         'console_scripts': [
             'skypipe = skypipe.client:run',]}

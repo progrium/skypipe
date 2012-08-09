@@ -2,6 +2,8 @@ import os
 import sys
 import zmq
 
+from . import deploy
+
 SP_HEADER = "SKYPIPE/0.1"
 SP_CMD_HELLO = "HELLO"
 SP_CMD_DATA = "DATA"
@@ -9,7 +11,6 @@ SP_CMD_LISTEN = "LISTEN"
 SP_CMD_UNLISTEN = "UNLISTEN"
 SP_DATA_EOF = ""
 
-zmq_endpoint = os.environ.get("ZMQ_ENDPOINT", "tcp://0.0.0.0:9000")
 try:
     pipe_name = sys.argv[1]
 except IndexError:
@@ -18,6 +19,10 @@ except IndexError:
 def run():
     context = zmq.Context()
     try:
+        zmq_endpoint = os.environ.get("ZMQ_ENDPOINT")
+        if not zmq_endpoint:
+            zmq_endpoint = deploy.find_satellite(context)
+
         if os.isatty(0):
             # output mode
             socket = context.socket(zmq.DEALER)
