@@ -1,0 +1,11 @@
+#!/bin/bash
+cp -a . ~
+cd
+(cat <<-EOF
+  virtualenv --python=python2.7 env
+  . env/bin/activate
+  python setup.py install
+  python satellite/server.py
+EOF
+) > run
+chmod a+x run

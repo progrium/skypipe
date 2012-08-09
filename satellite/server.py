@@ -1,5 +1,6 @@
 import collections
 import os
+import sys
 import zmq
 
 SP_HEADER = "SKYPIPE/0.1"
@@ -10,7 +11,7 @@ SP_CMD_UNLISTEN = "UNLISTEN"
 SP_DATA_EOF = ""
 
 context = zmq.Context()
-port = os.environ.get("PORT", 9000)
+port = os.environ.get("PORT_ZMQ", 9000)
 
 router = context.socket(zmq.ROUTER)
 router.bind("tcp://0.0.0.0:{}".format(port))
@@ -20,8 +21,10 @@ pipe_buffers = collections.defaultdict(list)
 
 print "Serving on {}...".format(port)
 while True:
+    sys.stdout.flush()
     msg = router.recv_multipart()
     client = msg.pop(0)
+    client_display = hex(abs(hash(client)))[-6:]
     header = str(msg.pop(0))
     command = str(msg.pop(0))
     if command == SP_CMD_HELLO:
@@ -50,5 +53,6 @@ while True:
                 router.send_multipart([listener,
                     SP_HEADER, SP_CMD_DATA, pipe_name, data])
     else:
+        print client_display, "Unknown command:", command
         continue
-    print hex(abs(hash(client)))[-6:], command
+    print client_display, command

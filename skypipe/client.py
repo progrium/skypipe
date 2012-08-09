@@ -1,4 +1,3 @@
-import fileinput
 import os
 import sys
 import zmq
@@ -10,7 +9,7 @@ SP_CMD_LISTEN = "LISTEN"
 SP_CMD_UNLISTEN = "UNLISTEN"
 SP_DATA_EOF = ""
 
-zmq_endpoint = "tcp://0.0.0.0:9000"
+zmq_endpoint = os.environ.get("ZMQ_ENDPOINT", "tcp://0.0.0.0:9000")
 try:
     pipe_name = sys.argv[1]
 except IndexError:
@@ -53,10 +52,15 @@ def run():
             socket = context.socket(zmq.DEALER)
             try:
                 socket.connect(zmq_endpoint)
-                
-                for line in fileinput.input(['-']):
+
+                # unbuffered stdin:
+                stdin = os.fdopen(sys.stdin.fileno(), 'r', 0)
+                while True:
+                    line = stdin.readline()
                     if line:
                         socket.send_multipart([SP_HEADER, SP_CMD_DATA, pipe_name, line])
+                    else:
+                        break
             except KeyboardInterrupt:
                 pass
             finally:
