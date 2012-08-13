@@ -7,9 +7,9 @@ Skypipe is a magical command line tool that lets you easily pipe data across ter
 Currently you need Python 2.7 and the ability to compile extensions.
 Then grab from Github and install:
 
-  $ git clone git://github.com/progrium/skypipe.git
-  $ cd skypipe
-  $ python setup.py install
+	$ git clone git://github.com/progrium/skypipe.git
+	$ cd skypipe
+	$ python setup.py install
 
 ## Setting up
 
