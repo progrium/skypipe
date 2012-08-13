@@ -64,7 +64,7 @@ Triggering is just sending an EOF over the pipe, causing the listening skypipe t
 
 The trick to this private pipe in the sky is that when you first use skypipe, behind the scenes it will deploy a very simple messaging server to dotcloud. Skypipe will use your account to transparently find and use this server, no matter where you are. 
 
-This all works without you ever thinking about it because this server is managed automatically and runs on Heroku for free. It might as well not exist!
+This all works without you ever thinking about it because this server is managed automatically and runs on dotcloud for free. It might as well not exist!
 
 This represents a new paradigm of creating tools that transparently leverage the cloud to create magical experiences. It's not quite software as a service, it's software *with* a service. Nobody is using a shared, central service. The software deploys its own service on your behalf for you to use. 
 
