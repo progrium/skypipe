@@ -50,7 +50,7 @@ def check_satellite(cli, context):
         var = cli.user.get(url).item
         port = var['DOTCLOUD_SATELLITE_ZMQ_PORT']
         host = socket.gethostbyname(var['DOTCLOUD_SATELLITE_ZMQ_HOST'])
-        endpoint = "tcp://{}:{}".format(host, port)
+        endpoint = "tcp://{0}:{1}".format(host, port)
         req = context.socket(zmq.DEALER)
         req.linger = 0
         req.connect(endpoint)
