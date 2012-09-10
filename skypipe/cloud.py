@@ -72,7 +72,7 @@ def discover_satellite(cli):
         environ = cli.user.get(url).item
         port = environ['DOTCLOUD_SATELLITE_ZMQ_PORT']
         host = socket.gethostbyname(environ['DOTCLOUD_SATELLITE_ZMQ_HOST'])
-        endpoint = "tcp://{}:{}".format(host, port)
+        endpoint = "tcp://{0}:{1}".format(host, port)
 
         ok = client.check_skypipe_endpoint(endpoint)
         if ok:

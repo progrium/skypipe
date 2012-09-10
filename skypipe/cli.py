@@ -14,7 +14,7 @@ import cloud
 if sys.platform == 'win32':
     appdata = os.path.join(os.environ.get('APPDATA'), "skypipe")
 else:
-    appdata = os.path.expanduser(os.path.join("~",".{}".format("skypipe")))
+    appdata = os.path.expanduser(os.path.join("~",".{0}".format("skypipe")))
 appconfig = os.path.join(appdata, "config")
 
 def load_satellite_endpoint():
