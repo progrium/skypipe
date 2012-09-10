@@ -17,5 +17,5 @@ setup(
         'skypipe': ['satellite/*']},
     entry_points={
         'console_scripts': [
-            'skypipe = skypipe.client:run',]}
+            'skypipe = skypipe.cli:run',]}
 )
