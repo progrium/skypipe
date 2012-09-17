@@ -4,12 +4,10 @@ Skypipe is a magical command line tool that lets you easily pipe data across ter
 
 ## Installing
 
-Currently you need Python 2.7 and the ability to compile extensions.
-Then grab from Github and install:
+Currently you need Python 2.6 and the ability to compile extensions.
+Then install with pip from Github:
 
-	$ git clone git://github.com/progrium/skypipe.git
-	$ cd skypipe
-	$ python setup.py install
+	$ pip install -e git+git://github.com/progrium/skypipe.git#egg=skypipe
 
 ## Setting up
 
@@ -19,7 +17,7 @@ you will be asked for credentials.
 
 ## Using Skypipe
 
-Skypipe combines named pipes and netcat and gives you even more power in a simpler tool. Here is a simple example using an unnamed skypipe like you would a regular named pipe in order to gzip a file across shells:
+Skypipe combines named pipes and netcat and gives you even more power in a simpler tool. Here is a simple example using skypipe like you would a named pipe in order to gzip a file across shells:
 
 	$ skypipe | gzip -9 -c > out.gz
 
@@ -69,6 +67,16 @@ This all works without you ever thinking about it because this server is managed
 This represents a new paradigm of creating tools that transparently leverage the cloud to create magical experiences. It's not quite software as a service, it's software *with* a service. Nobody is using a shared, central service. The software deploys its own service on your behalf for you to use. 
 
 Thanks to platforms like dotcloud (and Heroku), we can now build software leveraging features of software as a service that is *packaged and distributed like normal open source software*.
+
+## Contributing
+
+There aren't any tests yet, but it's pretty well documented and the code
+is written to be read. Fork and send pull requests. Check out the issues
+to see how you can be most helpful.
+
+## Contributors
+
+* Jeff Lindsay <progrium@gmail.com>
 
 ## License
 

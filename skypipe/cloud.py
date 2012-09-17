@@ -53,7 +53,7 @@ def setup_dotcloud_account(cli):
     cli.setup_auth()
     cli.get_keys()
 
-def discover_satellite(cli):
+def discover_satellite(cli, timeout=10):
     """Looks to make sure a satellite exists, returns endpoint
 
     First makes sure we have dotcloud account credentials. Then it looks
@@ -74,7 +74,7 @@ def discover_satellite(cli):
         host = socket.gethostbyname(environ['DOTCLOUD_SATELLITE_ZMQ_HOST'])
         endpoint = "tcp://{0}:{1}".format(host, port)
 
-        ok = client.check_skypipe_endpoint(endpoint)
+        ok = client.check_skypipe_endpoint(endpoint, timeout)
         if ok:
             #cli.info("DEBUG: Found satellite") # TODO: remove
             return endpoint
@@ -147,5 +147,6 @@ This may take about a minute...""")
         # workaround for a bug in the current dotcloud client code
         pass
 
-    return discover_satellite(cli)
+    cli.info("Finished, resuming normal use.")
+    return discover_satellite(cli, timeout=20)
 
