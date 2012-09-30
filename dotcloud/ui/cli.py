@@ -95,6 +95,7 @@ class CLI(object):
         self.info('Refreshed OAuth2 token')
         self.global_config.data['token']['access_token'] = res['access_token']
         self.global_config.data['token']['refresh_token'] = res['refresh_token']
+        self.global_config.data['token']['expires_in'] = res['expires_in']
         self.global_config.save()
         return True
 
@@ -149,9 +150,8 @@ class CLI(object):
 
         if not self._is_version_gte(version_local, version_min):
             # always warn when it is really too old.
-            self.warning('Your version ({0}) of the cli is really too ' \
-                    'old, you are looking for troubles.'.format(self.__version__,
-                        version_min_s))
+            self.warning('Your cli version ({0}) is outdated.'.format(self.__version__,
+                version_min_s))
         last_version_check = self.global_config.get('last_version_check', None)
 
         if last_version_check and last_version_check > time.time() \
@@ -162,7 +162,7 @@ class CLI(object):
 
         if not self._is_version_gte(version_local, version_cur):
             self.info('A newer version ({0}) of the CLI is available ' \
-                    '(upgrade with: pip install -U {1})'.format(version_cur_s, self.cmd))
+                    '(upgrade with: pip install -U https://github.com/dotcloud/dotcloud-cli/tarball/master)'.format(version_cur_s))
 
     def ensure_app_local(self, args):
         if args.application is None:
@@ -300,7 +300,7 @@ class CLI(object):
         client = RESTClient(endpoint=self.client.endpoint)
         client.authenticator = NullAuth()
         urlmap = client.get('/auth/discovery').item
-        username = self.prompt('dotCloud username')
+        username = self.prompt('dotCloud username or email')
         password = self.prompt('Password', noecho=True)
         credential = {'token_url': urlmap.get('token'),
             'key': CLIENT_KEY, 'secret': CLIENT_SECRET}
@@ -339,11 +339,18 @@ class CLI(object):
 
     def cmd_list(self, args):
         res = self.user.get('/applications')
+        padding = max([len(app['name']) for app in res.items]) + 2
         for app in sorted(res.items, key=lambda x: x['name']):
             if app['name'] == args.application:
-                print '* ' + '{0} ({1})'.format(self.colors.green(app['name']), app['flavor'])
+                print '* {0}{1}{2}'.format(
+                    self.colors.green(app['name']),
+                    ' ' * (padding - len(app['name'])),
+                    app['flavor'])
             else:
-                print '  ' + '{0} ({1})'.format(app['name'], app.get('flavor'))
+                print '  {0}{1}{2}'.format(
+                    app['name'],
+                    ' ' * (padding - len(app['name'])),
+                    app.get('flavor'))
 
     def cmd_create(self, args):
         self.info('Creating a {c.bright}{flavor}{c.reset} application named "{name}"'.format(
@@ -572,7 +579,7 @@ class CLI(object):
             ('reserved memory',
                 bytes2human(service.get('reserved_memory')) if service.get('reserved_memory') else 'N/A'),
             ('config', service.get('runtime_config').items()),
-            ('URLs', 'N/A' if not service.get('domains') else '')
+            ('URLs', 'N/A' if not service.get('domains') else ' ')
         ])
 
         for domain in service.get('domains'):
@@ -653,7 +660,13 @@ class CLI(object):
         if args.service:
             urls = self.get_url(args.application, args.service)
             if urls:
+                self.info('Opening service "{0}" in a browser: {c.bright}{1}{c.reset}'.format(
+                    args.service,
+                    urls[-1],
+                    c=self.colors))
                 webbrowser.open(urls[-1])
+            else:
+                self.die('No URLs found for service "{0}"'.format(args.service))
         else:
             urls = self.get_url(args.application)
             if not urls:
@@ -662,7 +675,11 @@ class CLI(object):
                 self.die('More than one service exposes an URL. ' \
                     'Please specify the name of the one you want to open: {0}' \
                     .format(', '.join(urls.keys())))
-            webbrowser.open(urls.values()[0][-1]['url'])
+            self.info('Opening service "{0}" in a browser: {c.bright}{1}{c.reset}'.format(
+                urls.keys()[0],
+                urls.values()[0][-1],
+                c=self.colors))
+            webbrowser.open(urls.values()[0][-1])
 
     def get_url(self, application, service=None):
         if service is None:
@@ -1186,14 +1203,6 @@ class CLI(object):
 
     @app_local
     def cmd_logs(self, args):
-        filter_svc = None
-        filter_inst = None
-        if args.service_or_instance:
-            parts = args.service_or_instance.split('.')
-            filter_svc = parts[0]
-            if len(parts) > 1:
-                filter_inst = int(parts[1])
-
         url = '/applications/{0}/logs?stream'.format(
                 args.application)
 
@@ -1203,13 +1212,10 @@ class CLI(object):
         if args.lines is not None:
             url += '&lines={0}'.format(args.lines)
 
-        if filter_svc is not None:
-            url += '&service={0}'.format(filter_svc)
-            if filter_inst is not None:
-                url += '&instance={0}'.format(filter_inst)
+        if args.service_or_instance:
+            url += '&filter={0}'.format(','.join(args.service_or_instance))
 
-        logs_meta, logs = self._stream_formated_logs(url, filter_svc,
-                filter_inst)
+        logs_meta, logs = self._stream_formated_logs(url)
         for log, formated_line, in logs:
             if log.get('partial', False):
                 print formated_line, '\r',

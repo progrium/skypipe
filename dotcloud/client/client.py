@@ -9,7 +9,7 @@ from .errors import RESTAPIError, AuthenticationNotConfigured
 
 
 class RESTClient(object):
-    def __init__(self, endpoint='https://api-experimental.dotcloud.com/v1',
+    def __init__(self, endpoint='https://rest.dotcloud.com/v1',
             debug=False, user_agent=None, version_checker=None):
         self.endpoint = endpoint
         self.debug = debug
@@ -64,8 +64,8 @@ class RESTClient(object):
             return path
 
     def get(self, path='', streaming=False):
-        return self.make_response(self.session.get(self.build_url(path)),
-                streaming)
+        return self.make_response(self.session.get(self.build_url(path),
+            prefetch=not streaming), streaming)
 
     def post(self, path='', payload={}):
         return self.make_response(
