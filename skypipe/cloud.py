@@ -12,6 +12,7 @@ import os.path
 import socket
 import sys
 import subprocess
+import threading
 
 import dotcloud.ui.cli
 from dotcloud.ui.config import GlobalConfig, CLIENT_KEY, CLIENT_SECRET
@@ -21,7 +22,7 @@ from dotcloud.client.errors import RESTAPIError
 
 import client
 
-app = "skypipe"
+APPNAME = "skypipe"
 satellite_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'satellite')
 
 # This is a monkey patch to silence rsync output
@@ -31,6 +32,31 @@ class FakeSubprocess(object):
         kwargs['stdout'] = subprocess.PIPE
         return subprocess.call(*args, **kwargs)
 dotcloud.ui.cli.subprocess = FakeSubprocess
+
+def wait_for(text, finish=None):
+    """Displays dots until returned event is set"""
+    if finish:
+        finish.set()
+        time.sleep(0.1) # threads, sigh
+    finish = threading.Event()
+    sys.stdout.write(text)
+    def _wait():
+        while not finish.is_set():
+            sys.stdout.write('.')
+            sys.stdout.flush()
+            finish.wait(timeout=1)
+        sys.stdout.write('\n')
+    threading.Thread(target=_wait).start()
+    return finish
+
+
+def lookup_endpoint(cli):
+    url = '/applications/{0}/environment'.format(APPNAME)
+    environ = cli.user.get(url).item
+    port = environ['DOTCLOUD_SATELLITE_ZMQ_PORT']
+    host = socket.gethostbyname(environ['DOTCLOUD_SATELLITE_ZMQ_HOST'])
+    return "tcp://{0}:{1}".format(host, port)
+
 
 def setup_dotcloud_account(cli):
     """Gets user/pass for dotcloud, performs auth, and stores keys"""
@@ -52,6 +78,7 @@ def setup_dotcloud_account(cli):
     cli.global_config = GlobalConfig()  # reload
     cli.setup_auth()
     cli.get_keys()
+    cli.info("Account setup, resuming...")
 
 def discover_satellite(cli, timeout=10):
     """Looks to make sure a satellite exists, returns endpoint
@@ -67,13 +94,8 @@ def discover_satellite(cli, timeout=10):
         cli.info("First time use, please setup dotCloud account")
         setup_dotcloud_account(cli)
 
-    url = '/applications/{0}/environment'.format(app)
     try:
-        environ = cli.user.get(url).item
-        port = environ['DOTCLOUD_SATELLITE_ZMQ_PORT']
-        host = socket.gethostbyname(environ['DOTCLOUD_SATELLITE_ZMQ_HOST'])
-        endpoint = "tcp://{0}:{1}".format(host, port)
-
+        endpoint = lookup_endpoint(cli)
         ok = client.check_skypipe_endpoint(endpoint, timeout)
         if ok:
             #cli.info("DEBUG: Found satellite") # TODO: remove
@@ -86,12 +108,12 @@ def discover_satellite(cli, timeout=10):
 def launch_satellite(cli):
     """Deploys a new satellite app over any existing app"""
 
-    cli.info("""Launching skypipe satellite.
-This only has to happen once for your account.
-This may take about a minute...""")
+    cli.info("Launching skypipe satellite:")
+
+    finish = wait_for("    Pushing to dotCloud")
 
     # destroy any existing satellite
-    url = '/applications/{0}'.format(app)
+    url = '/applications/{0}'.format(APPNAME)
     try:
         res = cli.user.delete(url)
     except RESTAPIError:
@@ -101,20 +123,20 @@ This may take about a minute...""")
     url = '/applications'
     try:
         cli.user.post(url, {
-            'name': app,
+            'name': APPNAME,
             'flavor': 'sandbox'
             })
     except RESTAPIError as e:
         if e.code == 409:
-            cli.die('Application "{0}" already exists.'.format(app))
+            cli.die('Application "{0}" already exists.'.format(APPNAME))
         else:
-            cli.die('Creating application "{0}" failed: {1}'.format(app, e))
-    class args: application = app
+            cli.die('Creating application "{0}" failed: {1}'.format(APPNAME, e))
+    class args: application = APPNAME
     #cli._connect(args)
 
     # push satellite code
     protocol = 'rsync'
-    url = '/applications/{0}/push-endpoints{1}'.format(app, '')
+    url = '/applications/{0}/push-endpoints{1}'.format(APPNAME, '')
     endpoint = cli._select_endpoint(cli.user.get(url).items, protocol)
     class args: path = satellite_path
     cli.push_with_rsync(args, endpoint)
@@ -122,13 +144,15 @@ This may take about a minute...""")
     # tell dotcloud to deploy, then wait for it to finish
     revision = None
     clean = False
-    url = '/applications/{0}/deployments'.format(app)
+    url = '/applications/{0}/deployments'.format(APPNAME)
     response = cli.user.post(url, {'revision': revision, 'clean': clean})
     deploy_trace_id = response.trace_id
     deploy_id = response.item['deploy_id']
 
+    finish = wait_for("    Waiting for deployment", finish)
+
     try:
-        res = cli._stream_deploy_logs(app, deploy_id,
+        res = cli._stream_deploy_logs(APPNAME, deploy_id,
                 deploy_trace_id=deploy_trace_id, follow=True)
         if res != 0:
             return res
@@ -147,6 +171,17 @@ This may take about a minute...""")
         # workaround for a bug in the current dotcloud client code
         pass
 
-    cli.info("Finished, resuming normal use.")
-    return discover_satellite(cli, timeout=20)
+    finish = wait_for("    Satellite coming online", finish)
+
+    endpoint = lookup_endpoint(cli)
+    ok = client.check_skypipe_endpoint(endpoint, 60)
+   
+    finish.set()
+    time.sleep(0.1) # sigh, threads
+
+    if ok:
+        cli.info("Finished, resuming normal use.")
+        return endpoint
+    else:
+        cli.die("Satellite failed to come online")
 
