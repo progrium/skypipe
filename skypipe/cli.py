@@ -32,7 +32,7 @@ def run():
         skypipe_name = ''
 
     dotcloud_endpoint = os.environ.get('DOTCLOUD_API_ENDPOINT', 
-            'https://api-experimental.dotcloud.com/v1')
+            'https://rest.dotcloud.com/v1')
     cli = DotCloudCLI(endpoint=dotcloud_endpoint)
 
     skypipe_endpoint = os.environ.get("SATELLITE", load_satellite_endpoint())
