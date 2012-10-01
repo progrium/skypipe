@@ -63,7 +63,7 @@ def setup_dotcloud_account(cli):
     client = RESTClient(endpoint=cli.client.endpoint)
     client.authenticator = NullAuth()
     urlmap = client.get('/auth/discovery').item
-    username = cli.prompt('dotCloud username')
+    username = cli.prompt('dotCloud email')
     password = cli.prompt('Password', noecho=True)
     credential = {'token_url': urlmap.get('token'),
         'key': CLIENT_KEY, 'secret': CLIENT_SECRET}
@@ -78,9 +78,15 @@ def setup_dotcloud_account(cli):
     cli.global_config = GlobalConfig()  # reload
     cli.setup_auth()
     cli.get_keys()
-    cli.info("Account setup, resuming...")
 
-def discover_satellite(cli, timeout=10):
+def setup(cli):
+    if not cli.global_config.loaded:
+        setup_dotcloud_account(cli)
+    discover_satellite(cli)
+    cli.success("Skypipe is ready for action")
+
+
+def discover_satellite(cli, deploy=True, timeout=5):
     """Looks to make sure a satellite exists, returns endpoint
 
     First makes sure we have dotcloud account credentials. Then it looks
@@ -91,19 +97,17 @@ def discover_satellite(cli, timeout=10):
     return a working endpoint.
     """
     if not cli.global_config.loaded:
-        cli.info("First time use, please setup dotCloud account")
-        setup_dotcloud_account(cli)
+        cli.die("Please setup skypipe by running `skypipe --setup`")
 
     try:
         endpoint = lookup_endpoint(cli)
         ok = client.check_skypipe_endpoint(endpoint, timeout)
         if ok:
-            #cli.info("DEBUG: Found satellite") # TODO: remove
             return endpoint
         else:
-            return launch_satellite(cli)
+            return launch_satellite(cli) if deploy else None
     except (RESTAPIError, KeyError):
-        return launch_satellite(cli)
+        return launch_satellite(cli) if deploy else None
 
 def launch_satellite(cli):
     """Deploys a new satellite app over any existing app"""
@@ -174,13 +178,12 @@ def launch_satellite(cli):
     finish = wait_for("    Satellite coming online", finish)
 
     endpoint = lookup_endpoint(cli)
-    ok = client.check_skypipe_endpoint(endpoint, 60)
+    ok = client.check_skypipe_endpoint(endpoint, 120)
    
     finish.set()
     time.sleep(0.1) # sigh, threads
 
     if ok:
-        cli.info("Finished, resuming normal use.")
         return endpoint
     else:
         cli.die("Satellite failed to come online")
