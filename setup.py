@@ -2,11 +2,11 @@
 import os
 from setuptools import setup, find_packages
 
-VERSION = '0.1.2'
+import skypipe
 
 setup(
     name='skypipe',
-    version=VERSION,
+    version=skypipe.VERSION,
     author='Jeff Lindsay',
     author_email='progrium@gmail.com',
     description='Magic pipe in the sky',
@@ -20,7 +20,7 @@ setup(
     ],
     url="http://github.com/progrium/skypipe",
     packages=find_packages(),
-    install_requires=['pyzmq-static', 'argparse', 'requests', 'colorama'],
+    install_requires=['pyzmq', 'dotcloud', 'argparse'],
     zip_safe=False,
     package_data={
         'skypipe': ['satellite/*']},

@@ -19,15 +19,9 @@ router.bind("tcp://0.0.0.0:{}".format(port))
 pipe_clients = collections.defaultdict(list) # connected skypipe clients
 pipe_buffers = collections.defaultdict(list) # any buffered data for pipes
 
-print "Serving on {}...".format(port)
+print "Skypipe satellite serving on {}...".format(port)
 
-checker = {
-        SP_CMD_LISTEN :cmd_lis_func,
-        SP_CMD_UNLISTEN: cmd_unlis_func,
-        SP_CMD_DATA: cmd_data_func,
-        }
-
-def cmd_lis_func():
+def cmd_listen():
     pipe_clients[pipe_name].append(client)
     if len(pipe_clients[pipe_name]) == 1:
         # if only client after adding, then previously there were
@@ -41,11 +35,11 @@ def cmd_lis_func():
                 # sending data until the next one listens
                 break
 
-def cmd_unlis_func():
+def cmd_unlisten():
     if client in pipe_clients[pipe_name]:
         pipe_clients[pipe_name].remove(client)
- 
-def cmd_data_func():
+
+def cmd_data():
     data = msg.pop(0)
     if not pipe_clients[pipe_name]:
         pipe_buffers[pipe_name].append(data)
@@ -53,26 +47,28 @@ def cmd_data_func():
         for listener in pipe_clients[pipe_name]:
             router.send_multipart([listener,
                 SP_HEADER, SP_CMD_DATA, pipe_name, data])
- 
 
 while True:
     sys.stdout.flush()
-    
+
     msg = router.recv_multipart()
     client = msg.pop(0)
     header = str(msg.pop(0))
     command = str(msg.pop(0))
-    
+
     # Human-friendlier version of client UUID
     client_display = hex(abs(hash(client)))[-6:]
 
     if SP_CMD_HELLO == command:
         router.send_multipart([client, SP_HEADER, SP_CMD_HELLO])
-    
     else:
         pipe_name = msg.pop(0)
         try:
-            checker[command]()
+            {
+                SP_CMD_LISTEN: cmd_listen,
+                SP_CMD_UNLISTEN: cmd_unlisten,
+                SP_CMD_DATA: cmd_data,
+            }[command]()
         except KeyError:
             print client_display, "Unknown command:", command
 

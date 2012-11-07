@@ -1,1 +1,1 @@
-pyzmq-static
+pyzmq
