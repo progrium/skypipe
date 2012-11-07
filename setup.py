@@ -11,7 +11,7 @@ setup(
     author_email='progrium@gmail.com',
     description='Magic pipe in the sky',
     long_description=open(os.path.join(os.path.dirname(__file__),
-        "README.md")).read(),
+        "README.md")).read().replace(':', '::'),
     license='MIT',
     classifiers=[
         "Development Status :: 3 - Alpha",
