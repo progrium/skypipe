@@ -7,9 +7,9 @@ Installing
 ----------
 
 Currently you need Python 2.6 and the ability to compile extensions.
-Then install with pip from Github:
+Then install with pip:
 
-	$ pip install -e git+git://github.com/progrium/skypipe.git#egg=skypipe
+	$ pip install skypipe
 
 Setting up
 ----------
