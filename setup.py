@@ -20,7 +20,7 @@ setup(
     ],
     url="http://github.com/progrium/skypipe",
     packages=find_packages(),
-    install_requires=['pyzmq', 'dotcloud', 'argparse'],
+    install_requires=['pyzmq', 'dotcloud>=0.7', 'argparse'],
     zip_safe=False,
     package_data={
         'skypipe': ['satellite/*']},
