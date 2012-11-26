@@ -6,7 +6,7 @@ Skypipe is a magical command line tool that lets you easily pipe data across ter
 Installing
 ----------
 
-Currently you need Python 2.6 and the ability to compile extensions.
+Currently you need Python 2.6, ZeroMQ 2.0+ and the ability to compile extensions.
 Then install with pip:
 
 	$ pip install skypipe

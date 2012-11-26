@@ -4,3 +4,4 @@ TODO
 *.pyc
 **/*.pyc
 dist
+.DS_Store
